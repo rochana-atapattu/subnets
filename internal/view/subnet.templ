@@ -1,0 +1,63 @@
+package view
+
+templ Subnet() {
+	<h1>Subnet Calculator</h1>
+	<form hx-post="/calculate" hx-target="#calcbody" hx-swap="innerHTML">
+		<table cellspacing="0">
+			<tr>
+				<td class="label">Network Address</td>
+				<td class="label">Mask bits</td>
+			</tr>
+			<tr>
+				<td>
+					<input
+						type="text"
+						name="network"
+						size="15"
+						maxlength="15"
+						value="10.2.0.0"
+					/>
+				</td>
+				<td>
+					<input
+						type="text"
+						name="netbits"
+						size="2"
+						maxlength="2"
+						value="16"
+					/>
+				</td>
+				<td>
+					<input type="submit" value="Update"/>
+					<input
+						type="button"
+						value="Reset"
+						hx-get="/reset"
+						hx-on::click
+                                                hx-target="body"
+					/>
+				</td>
+			</tr>
+		</table>
+	</form>
+	<table class="calc" cellspacing="0" cellpadding="2">
+		<thead>
+			<tr>
+				<th id="subnetHeader">Subnet address</th>
+				<th id="netmaskHeader">Netmask</th>
+				<th id="rangeHeader">Range of addresses</th>
+				<th id="useableHeader">Useable IPs</th>
+				<th id="hostsHeader">Hosts</th>
+				<th id="divideHeader">Divide</th>
+				<th id="joinHeader">Join</th>
+			</tr>
+		</thead>
+		<tbody id="calcbody"></tbody>
+	</table>
+}
+
+templ SubnetIndex(title string, cmp templ.Component) {
+	@Base(title) {
+		@cmp
+	}
+}

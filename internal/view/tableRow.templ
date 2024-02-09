@@ -1,0 +1,48 @@
+package view
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/rochana-atapattu/subnets/internal/types"
+)
+
+func convertToJSON(subnetAddress string, netmask uint32) string {
+	jsonData := map[string]interface{}{"network": subnetAddress, "netbits": netmask}
+	jsonValue, _ := json.Marshal(jsonData)
+	return string(jsonValue)
+}
+
+func generateSubnetAddress(subnetAddress string, netmask uint32) string {
+	return subnetAddress + "/" + fmt.Sprint(netmask)
+}
+
+templ Row(rows []types.TableRowData) {
+	for _, row := range rows {
+		<tr>
+			<td>{ generateSubnetAddress(row.SubnetAddress,row.Netbits) }</td>
+			<td>{ row.Netmask }</td>
+			<td>{ row.RangeOfAddresses }</td>
+			<td>{ row.UseableIPs }</td>
+			<td>{ row.Hosts }</td>
+			<td
+				hx-post="/divide"
+				hx-target="#calcbody"
+				hx-swap="innerHTML"
+				hx-vals={ convertToJSON(row.SubnetAddress, row.Netbits) }
+				style="cursor: pointer;"
+			>divide</td>
+			<td
+				hx-post="/join"
+				hx-target="#calcbody"
+				hx-swap="innerHTML"
+				hx-vals={ convertToJSON(row.ParentSubnetAddress, row.ParentNetbits) }
+				style="cursor: pointer;"
+				rowspan="2"
+			>join</td>
+		</tr>
+	}
+}
+
+templ RowComponent(cmp templ.Component) {
+	@cmp
+}
