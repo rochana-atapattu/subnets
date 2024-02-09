@@ -86,7 +86,8 @@ func (n *Subnet) Iterate(f func(*Subnet)) {
 //print
 func (n *Subnet) Print() {
 	n.Iterate(func(n *Subnet) {
-		fmt.Printf("%s/%d\n", InetNtoa(n.Address), n.MaskLen)
+		fmt.Println("-----------")
+		fmt.Printf("%+v\n", n)
 	})
 }
 // SaveTree saves the subnet tree to a file in JSON format.
