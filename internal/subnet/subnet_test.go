@@ -1,21 +1,19 @@
-package server
+package subnet
 
 import (
 	"testing"
-
-	"github.com/rochana-atapattu/subnets/internal/subnet"
 )
 
 // TestInetAtonNtoa tests the conversion between string IP addresses and uint32 representation.
 func TestInetAtonNtoa(t *testing.T) {
 	testIP := "192.168.1.1"
 	expectedUint := uint32(3232235777)
-	resultUint := subnet.InetAton(testIP)
+	resultUint := InetAton(testIP)
 	if resultUint != expectedUint {
 		t.Errorf("inetAton(%s) = %d; want %d", testIP, resultUint, expectedUint)
 	}
 
-	resultIP := subnet.InetNtoa(expectedUint)
+	resultIP := InetNtoa(expectedUint)
 	if resultIP != testIP {
 		t.Errorf("inetNtoa(%d) = %s; want %s", expectedUint, resultIP, testIP)
 	}
@@ -23,25 +21,49 @@ func TestInetAtonNtoa(t *testing.T) {
 
 // TestSubnetCalculations tests the subnet mask, network address, and last address calculations.
 func TestSubnetCalculations(t *testing.T) {
-	ip := subnet.InetAton("10.2.0.0")
+	ip := InetAton("10.2.0.0")
 	maskLen := uint32(16)
 
 	expectedNetmask := uint32(0xffff0000) // 255.255.0.0
-	if result := subnet.SubnetNetmask(maskLen); result != expectedNetmask {
+	if result := SubnetNetmask(maskLen); result != expectedNetmask {
 		t.Errorf("subnetNetmask(%d) = %x; want %x", maskLen, result, expectedNetmask)
 	}
 
 	expectedNetwork := uint32(0x0a020000) // 10.2.0.0
-	if result := subnet.NetworkAddress(ip, maskLen); result != expectedNetwork {
+	if result := NetworkAddress(ip, maskLen); result != expectedNetwork {
 		t.Errorf("networkAddress(%x, %d) = %x; want %x", ip, maskLen, result, expectedNetwork)
 	}
 
 	expectedLastAddress := uint32(0x0a02ffff) // 10.2.255.255
-	if result := subnet.SubnetLastAddress(ip, maskLen); result != expectedLastAddress {
+	if result := SubnetLastAddress(ip, maskLen); result != expectedLastAddress {
 		t.Errorf("subnetLastAddress(%x, %d) = %x; want %x", ip, maskLen, result, expectedLastAddress)
 	}
 }
 
+
+func TestMaskLen(t *testing.T) {
+    // Define test cases
+    testCases := []struct {
+        subnetMask uint32
+        expected   uint32
+    }{
+        {0xFFFFFFFF, 32}, // 255.255.255.255
+        {0xFFFFFF00, 24}, // 255.255.255.0
+        {0xFFFF0000, 16}, // 255.255.0.0
+        {0xFF000000, 8},  // 255.0.0.0
+        {0x00000000, 0},  // 0.0.0.0
+    }
+
+    // Iterate through test cases
+    for _, tc := range testCases {
+        t.Run("", func(t *testing.T) {
+            maskLen := MaskLen(tc.subnetMask)
+            if maskLen != tc.expected {
+                t.Errorf("MaskLen(%#08x) = %d; want %d", tc.subnetMask, maskLen, tc.expected)
+            }
+        })
+    }
+}
 // TestSubnetDivision tests the division of subnets into two for various scenarios.
 func TestSubnetDivision(t *testing.T) {
 	cases := []struct {
@@ -93,16 +115,16 @@ func TestSubnetDivision(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			root := &subnet.Subnet{
-				Address: subnet.InetAton(c.address),
+			root := &Subnet{
+				Address: InetAton(c.address),
 				MaskLen: c.initialMaskLen,
 			}
 			root.Divide()
 
-			leftAddr := subnet.InetNtoa(root.Left.Address)
+			leftAddr := InetNtoa(root.Left.Address)
 			rightAddr := ""
 			if root.Right != nil { // Check if right child exists (it should not for a /32 subnet)
-				rightAddr = subnet.InetNtoa(root.Right.Address)
+				rightAddr = InetNtoa(root.Right.Address)
 			}
 
 			if leftAddr != c.expectedLeftAddr {

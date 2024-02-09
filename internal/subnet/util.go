@@ -25,6 +25,15 @@ func SubnetNetmask(maskLen uint32) uint32 {
 	return ^uint32(0) << (32 - uint(maskLen))
 }
 
+func MaskLen(subnetMask uint32) uint32 {
+    // Count the number of leading 1s in the subnetMask.
+    var maskLen uint32 = 0
+    for subnetMask&0x80000000 != 0 {
+        maskLen++
+        subnetMask <<= 1 // Shift left to check the next bit.
+    }
+    return maskLen
+}
 // networkAddress calculates the network address for a given IP address and subnet mask length.
 func NetworkAddress(ip, maskLen uint32) uint32 {
 	mask := SubnetNetmask(maskLen)

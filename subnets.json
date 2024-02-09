@@ -1,0 +1,55 @@
+{
+  "Address": 167903232,
+  "MaskLen": 16,
+  "Left": {
+    "Address": 167903232,
+    "MaskLen": 17,
+    "Left": null,
+    "Right": null,
+    "Labels": null
+  },
+  "Right": {
+    "Address": 167936000,
+    "MaskLen": 17,
+    "Left": {
+      "Address": 167936000,
+      "MaskLen": 18,
+      "Left": null,
+      "Right": null,
+      "Labels": null
+    },
+    "Right": {
+      "Address": 167952384,
+      "MaskLen": 18,
+      "Left": {
+        "Address": 167952384,
+        "MaskLen": 19,
+        "Left": null,
+        "Right": null,
+        "Labels": null
+      },
+      "Right": {
+        "Address": 167960576,
+        "MaskLen": 19,
+        "Left": {
+          "Address": 167960576,
+          "MaskLen": 20,
+          "Left": null,
+          "Right": null,
+          "Labels": null
+        },
+        "Right": {
+          "Address": 167964672,
+          "MaskLen": 20,
+          "Left": null,
+          "Right": null,
+          "Labels": null
+        },
+        "Labels": null
+      },
+      "Labels": null
+    },
+    "Labels": null
+  },
+  "Labels": null
+}

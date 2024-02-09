@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
@@ -36,25 +37,38 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		case "enter":
-			return m, tea.Batch(
-				tea.Printf("Let's go to %s!", m.table.SelectedRow()[1]),
-			)
+		case "d":
+			addr := subnet.InetAton(strings.Split(m.table.SelectedRow()[0], "/")[0])
+			maskLen := subnet.MaskLen(subnet.InetAton(m.table.SelectedRow()[1]))
+			m.subnet.Find(addr, maskLen).Divide()
+		case "j":
+			addr := subnet.InetAton(strings.Split(m.table.SelectedRow()[0], "/")[0])
+			maskLen := subnet.MaskLen(subnet.InetAton(m.table.SelectedRow()[1]))
+			m.subnet.Find(addr, maskLen).Join()
+		case "s":
+			subnet.SaveTree(m.subnet, "subnets.json")
+		case "l":
+			subnet, err := subnet.LoadTree("subnets.json")
+			if err != nil {
+				fmt.Println("Error loading subnet tree:", err)
+				return m, nil
+			}
+			m.subnet = subnet
 		}
 	}
 	m.table, cmd = m.table.Update(msg)
+	m.rows()
 	return m, cmd
 }
 
-func (m model) View() string {
+func (m *model) rows() {
 	var rows []table.Row
 	m.subnet.Iterate(func(n *subnet.Subnet) {
-		fmt.Println(n.Address, n.MaskLen)
 		s := subnet.NetworkAddress(n.Address, n.MaskLen)
 		lastAddress := subnet.SubnetLastAddress(s, n.MaskLen)
 		netmask := subnet.SubnetNetmask(n.MaskLen)
 		rows = append(rows, table.Row{
-			subnet.InetNtoa(n.Address),
+			subnet.InetNtoa(n.Address) + "/" + fmt.Sprint(n.MaskLen),
 			subnet.InetNtoa(netmask),
 			subnet.InetNtoa(s+1) + " - " + subnet.InetNtoa(lastAddress),
 			subnet.InetNtoa(s+1) + " - " + subnet.InetNtoa(lastAddress-1),
@@ -62,6 +76,9 @@ func (m model) View() string {
 		})
 	})
 	m.table.SetRows(rows)
+}
+func (m model) View() string {
+
 	return baseStyle.Render(m.table.View()) + "\n"
 }
 
@@ -81,7 +98,6 @@ func main() {
 		MaskLen: 16,
 	}
 
-	
 	t := table.New(
 		table.WithColumns(columns),
 		table.WithFocused(true),

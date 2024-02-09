@@ -1,10 +1,15 @@
 package subnet
 
+import (
+	"encoding/json"
+	"os"
+	"fmt"
+)
 // SubnetNode represents a node in the subnet division tree.
 type Subnet struct {
 	Address uint32
 	MaskLen uint32
-	Parent  *Subnet
+	Parent  *Subnet `json:"-"`
 	Left    *Subnet
 	Right   *Subnet
 	Labels  []string
@@ -77,4 +82,46 @@ func (n *Subnet) Iterate(f func(*Subnet)) {
 		}
 	}
 }
+
+//print
+func (n *Subnet) Print() {
+	n.Iterate(func(n *Subnet) {
+		fmt.Printf("%s/%d\n", InetNtoa(n.Address), n.MaskLen)
+	})
+}
+// SaveTree saves the subnet tree to a file in JSON format.
+func SaveTree(root *Subnet, filename string) error {
+    data, err := json.MarshalIndent(root, "", "  ")
+    if err != nil {
+        return err
+    }
+    return os.WriteFile(filename, data, 0644)
+}
+
+// LoadTree loads the subnet tree from a file in JSON format.
+func LoadTree(filename string) (*Subnet, error) {
+    data, err := os.ReadFile(filename)
+    if err != nil {
+        return nil, err
+    }
+
+    var root Subnet
+    if err := json.Unmarshal(data, &root); err != nil {
+        return nil, err
+    }
+
+    reconstructParent(&root, nil) // Reconstruct parent pointers
+
+    return &root, nil
+}
+
+// reconstructParent helps to set the Parent field after loading from JSON.
+func reconstructParent(node *Subnet, parent *Subnet) {
+    if node != nil {
+        node.Parent = parent
+        reconstructParent(node.Left, node)
+        reconstructParent(node.Right, node)
+    }
+}
+
 
