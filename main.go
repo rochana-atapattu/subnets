@@ -7,8 +7,15 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/evertras/bubble-table/table"
+	"github.com/rochana-atapattu/subnets/table"
 	"github.com/rochana-atapattu/subnets/internal/subnet"
+)
+
+type sessionState int
+
+const (
+	stateList sessionState = iota
+	stateEditing
 )
 
 const (
@@ -16,8 +23,9 @@ const (
 	columnKeyMask    = "mask"
 	columnKeyAddrs   = "addrs"
 	columnKeyUseable = "useable"
-	columnKeyLabels = "labels"
+	columnKeyLabels  = "labels"
 	columnKeyHosts   = "hosts"
+	columnKeyJoin	   = "join"
 )
 
 var (
@@ -30,10 +38,8 @@ var (
 )
 
 type model struct {
-	table             table.Model
-	subnet            *subnet.Subnet
-	currentSubnet     *subnet.Subnet
-	lastSelectedEvent table.UserEventRowSelectToggled
+	state     sessionState
+	listModel listModel
 }
 
 func (m model) Init() tea.Cmd {
@@ -46,8 +52,42 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds []tea.Cmd
 	)
 
-	m.table, cmd = m.table.Update(msg)
+	switch m.state {
+	case stateList:
+		newList, newCmd := m.listModel.Update(msg)
+		listModel, ok := newList.(listModel)
+		if !ok {
+			panic("unexpected model type")
+		}
+		m.listModel = listModel
+		cmd = newCmd
+	}
+
 	cmds = append(cmds, cmd)
+	return m, tea.Batch(cmds...)
+}
+
+func (m model) View() string {
+	view := m.listModel.View() + "\n"
+	return lipgloss.NewStyle().MarginLeft(1).Render(view)
+}
+
+
+
+type listModel struct {
+	subnet *subnet.Subnet
+	table  table.Model
+}
+
+func (m listModel) Init() tea.Cmd {
+	
+	return nil
+}
+
+func (m listModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	m.table, cmd = m.table.Update(msg)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -75,8 +115,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.rows()
 	return m, cmd
 }
-
-func (m *model) rows() {
+func (m *listModel) rows() {
 	rows := []table.Row{}
 	m.subnet.Iterate(func(n *subnet.Subnet) {
 		s := subnet.NetworkAddress(n.Address, n.MaskLen)
@@ -92,37 +131,47 @@ func (m *model) rows() {
 	})
 
 	m.table = m.table.WithRows(rows)
-		
+
 }
 
-func (m model) View() string {
-	view := m.table.View() + "\n"
-	return lipgloss.NewStyle().MarginLeft(1).Render(view)
+func (m listModel) View() string {
+	return m.table.View()
 }
 
 func main() {
+	
+	if os.Getenv("HELP_DEBUG") != "" {
+		f, err := tea.LogToFile("tmp/debug.log", "help")
+		if err != nil {
+			fmt.Println("Couldn't open a file for logging:", err)
+			os.Exit(1)
+		}
+		defer f.Close() // nolint:errcheck
+	}
+
+	m := model{
+		state: stateList,
+	}
 	columns := []table.Column{
 		table.NewColumn(columnKeyAddr, "Subnet address", 15),
 		table.NewColumn(columnKeyMask, "Netmask", 15),
 		table.NewColumn(columnKeyAddrs, "Range of addressess", 33),
 		table.NewColumn(columnKeyUseable, "Useable IPs", 33),
-		table.NewColumn(columnKeyLabels, "Labels", 33),
 		table.NewColumn(columnKeyHosts, "Hosts", 7),
+		table.NewColumn(columnKeyJoin, "Join", 7),
 	}
-
-	m := model{}
-
-	m.subnet = &subnet.Subnet{
+	m.listModel.subnet = &subnet.Subnet{
 		Address: subnet.InetAton("10.2.0.0"),
 		MaskLen: 16,
 	}
 
 	t := table.New(columns)
 
-	m.table = t.BorderRounded().
+	m.listModel.table = t.BorderRounded().
 		WithBaseStyle(styleBase).
-		WithPageSize(15).
-		Focused(true)
+		Focused(true).WithHeaderVisibility(true)
+
+	
 
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Println("Error running program:", err)
