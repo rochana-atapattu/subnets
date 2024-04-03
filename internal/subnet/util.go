@@ -3,6 +3,8 @@ package subnet
 import (
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
 )
 
 // inetAton converts a dotted IP address string to a uint32.
@@ -26,14 +28,15 @@ func SubnetNetmask(maskLen uint32) uint32 {
 }
 
 func MaskLen(subnetMask uint32) uint32 {
-    // Count the number of leading 1s in the subnetMask.
-    var maskLen uint32 = 0
-    for subnetMask&0x80000000 != 0 {
-        maskLen++
-        subnetMask <<= 1 // Shift left to check the next bit.
-    }
-    return maskLen
+	// Count the number of leading 1s in the subnetMask.
+	var maskLen uint32 = 0
+	for subnetMask&0x80000000 != 0 {
+		maskLen++
+		subnetMask <<= 1 // Shift left to check the next bit.
+	}
+	return maskLen
 }
+
 // networkAddress calculates the network address for a given IP address and subnet mask length.
 func NetworkAddress(ip, maskLen uint32) uint32 {
 	mask := SubnetNetmask(maskLen)
@@ -50,5 +53,17 @@ func SubnetLastAddress(subnet, maskLen uint32) uint32 {
 	return subnet + SubnetAddresses(maskLen) - 1
 }
 
-
-
+// IsValidIPAddress checks if the given string is a valid IPv4 address.
+func IsValidIPAddress(ip string) bool {
+	parts := strings.Split(ip, ".")
+	if len(parts) != 4 {
+		return false
+	}
+	for _, part := range parts {
+		num, err := strconv.Atoi(part)
+		if err != nil || num < 0 || num > 255 {
+			return false
+		}
+	}
+	return true
+}

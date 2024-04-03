@@ -18,14 +18,18 @@ Ensure you have Go installed on your system. You can download and install Go fro
 To install the Subnet Calculator, run the following command:
 
 ```bash
-go install github.com/rochana-atapattu/subnets
+go install github.com/rochana-atapattu/subnets@latest
 ```
 ## Usage
 
-To start the subnet calculator, run:
+```bash
+subnets <IP address> <mask length>
+```
+
+Example
 
 ```bash
-subnets
+subnets 192.168.0.0 24
 ```
 
 Follow the on-screen prompts to enter your network information and perform subnet calculations.

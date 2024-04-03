@@ -17,9 +17,8 @@ import (
 )
 
 var (
-
-	styleDoc = lipgloss.NewStyle().Padding(1)
-	styleHelp =       lipgloss.NewStyle().Margin(0, 0, 0, 0).Foreground(lipgloss.AdaptiveColor{Light: "#000000", Dark: "#ffffff"})
+	styleDoc  = lipgloss.NewStyle().Padding(1)
+	styleHelp = lipgloss.NewStyle().Margin(0, 0, 0, 0).Foreground(lipgloss.AdaptiveColor{Light: "#000000", Dark: "#ffffff"})
 )
 
 type model struct {
@@ -28,7 +27,6 @@ type model struct {
 
 	width  int
 	height int
-
 
 	Help     help.Model
 	KeyMap   KeyMap
@@ -177,6 +175,25 @@ func (m *model) SetShowHelp() bool {
 	return m.showHelp
 }
 func main() {
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: subnets <IP address> <mask length>")
+		os.Exit(1)
+	}
+	ipAddr := os.Args[1]
+	maskLengthStr := os.Args[2]
+
+	// Validate the provided IP address
+	if !subnet.IsValidIPAddress(ipAddr) {
+		fmt.Println("Invalid IP address:", ipAddr)
+		os.Exit(1)
+	}
+
+	// Convert the mask length from string to integer
+	maskLength, err := strconv.Atoi(maskLengthStr)
+	if err != nil || maskLength < 0 || maskLength > 32 {
+		fmt.Println("Invalid mask length:", maskLengthStr)
+		os.Exit(1)
+	}
 
 	if os.Getenv("HELP_DEBUG") != "" {
 		f, err := tea.LogToFile("tmp/debug.log", "help")
@@ -187,7 +204,7 @@ func main() {
 		defer f.Close() // nolint:errcheck
 	}
 
-		w, h, err := term.GetSize(int(os.Stdout.Fd()))
+	w, h, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil {
 		w = 80
 		h = 24
@@ -196,6 +213,7 @@ func main() {
 	w = w - left - right
 	h = h - top - bottom - 10
 
+	// Use the provided IP address and mask length
 	m := model{
 		showHelp: true,
 		Help:     help.New(),
@@ -204,11 +222,9 @@ func main() {
 		width:    w,
 	}
 	m.subnet = &subnet.Subnet{
-		Address: subnet.InetAton("10.2.0.0"),
-		MaskLen: 16,
+		Address: subnet.InetAton(ipAddr),
+		MaskLen: uint32(maskLength),
 	}
-
-
 
 	nodes := []tree.Node{toNodeTree(m.subnet)}
 	m.tree = tree.New(nodes)
