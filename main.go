@@ -174,13 +174,20 @@ func (m *model) rows() {
 func (m *model) SetShowHelp() bool {
 	return m.showHelp
 }
+
 func main() {
+	var ipAddr string
+	var maskLengthStr string
+
 	if len(os.Args) < 3 {
-		fmt.Println("Usage: subnets <IP address> <mask length>")
-		os.Exit(1)
+		// Set default values if arguments are missing
+		ipAddr = "10.2.0.0"
+		maskLengthStr = "16"
+		fmt.Println("No input provided. Using default values:", ipAddr, maskLengthStr)
+	} else {
+		ipAddr = os.Args[1]
+		maskLengthStr = os.Args[2]
 	}
-	ipAddr := os.Args[1]
-	maskLengthStr := os.Args[2]
 
 	// Validate the provided IP address
 	if !subnet.IsValidIPAddress(ipAddr) {
